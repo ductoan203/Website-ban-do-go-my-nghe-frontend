@@ -17,6 +17,10 @@ export interface Order {
   paymentMethod?: string;
   paymentStatus?: string;
   shippingAddress?: string;
+  customerName?: string;
+  email?: string;
+  phone?: string;
+  cancelledBy?: string;
 }
 
 const API_URL = 'http://localhost:8080/doan/orders';
@@ -33,6 +37,10 @@ const orderService = {
   },
   cancelOrder: async (orderId: number) => {
     const res = await axios.put(`${API_URL}/cancel/${orderId}`, {}, { headers: getAuthHeaders() });
+    return (res.data as { result: any }).result;
+  },
+  returnOrder: async (orderId: number) => {
+    const res = await axios.put(`${API_URL}/return/${orderId}`, {}, { headers: getAuthHeaders() });
     return (res.data as { result: any }).result;
   },
 };

@@ -20,7 +20,6 @@ interface Product {
   slug: string
   description: string
   price: number
-  discountPrice: number
   thumbnailUrl: string
   material: string
   dimensions: string
@@ -41,7 +40,6 @@ const ProductManagement = () => {
     name: '',
     description: '',
     price: 0,
-    discountPrice: 0,
     thumbnailUrl: '',
     material: '',
     dimensions: '',
@@ -90,7 +88,6 @@ const ProductManagement = () => {
         name: product.name,
         description: product.description,
         price: product.price,
-        discountPrice: product.discountPrice,
         thumbnailUrl: product.thumbnailUrl,
         material: product.material,
         dimensions: product.dimensions,
@@ -104,7 +101,6 @@ const ProductManagement = () => {
         name: '',
         description: '',
         price: 0,
-        discountPrice: 0,
         thumbnailUrl: '',
         material: '',
         dimensions: '',
@@ -123,7 +119,6 @@ const ProductManagement = () => {
       name: '',
       description: '',
       price: 0,
-      discountPrice: 0,
       thumbnailUrl: '',
       material: '',
       dimensions: '',
@@ -143,19 +138,15 @@ const ProductManagement = () => {
     }))
   }
 
-  
-  
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-  
+
     try {
       const payload = {
         name: formData.name,
         description: formData.description,
         price: Number(formData.price),
-        discountPrice: Number(formData.discountPrice),
         thumbnailUrl: formData.thumbnailUrl,
         material: formData.material,
         dimensions: formData.dimensions,
@@ -163,13 +154,13 @@ const ProductManagement = () => {
         categoryId: formData.category?.id,
         images: formData.images?.map(img => img.imageUrl),
       }
-  
+
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, payload)
       } else {
         await productService.createProduct(payload)
       }
-  
+
       setIsModalOpen(false)
       fetchProducts()
     } catch (error) {
@@ -179,8 +170,6 @@ const ProductManagement = () => {
       setLoading(false)
     }
   }
-  
-  
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
@@ -241,37 +230,44 @@ const ProductManagement = () => {
           <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
               <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
+                <table className="min-w-full divide-y divide-gray-300 table-fixed">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Ảnh đại diện</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tên</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá KM</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Chất liệu</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kích thước</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tồn kho</th>
-                      <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Danh mục</th>
-                      <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Actions</span></th>
+                      <th className="w-[200px] py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Ảnh đại diện</th>
+                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tên</th>
+                      <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá</th>
+                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Chất liệu</th>
+                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kích thước</th>
+                      <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tồn kho</th>
+                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Danh mục</th>
+                      <th className="w-28 relative py-3.5 pl-3 pr-4 sm:pr-6 text-sm font-semibold text-gray-900">Hành động</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
                     {filteredProducts.map((product) => (
                       <tr key={product.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                        <img src={`http://localhost:8080/doan${product.thumbnailUrl}`} alt={product.name} width={60} />
-
+                        <td className="whitespace-normal py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          <img src={`http://localhost:8080/doan${product.thumbnailUrl}`} alt={product.name} className="w-full max-h-32 object-contain rounded-md mx-auto" />
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.name}</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.price.toLocaleString('vi-VN')}đ</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.discountPrice?.toLocaleString('vi-VN')}đ</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.material}</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.dimensions}</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.quantityInStock}</td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{product.category?.name}</td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <button onClick={() => handleOpenModal(product)} className="text-blue-600 hover:text-blue-900 mr-4">Sửa</button>
-                          <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">Xóa</button>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.name}</td>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.material}</td>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.dimensions}</td>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.quantityInStock}</td>
+                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.category?.name}</td>
+                        <td className="relative whitespace-normal py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleOpenModal(product)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDelete(product.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Xóa
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -303,15 +299,11 @@ const ProductManagement = () => {
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700">Giá</label>
                     <input type="number" name="price" id="price" required value={formData.price} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
                   </div>
-                   <div className="col-span-1">
-                    <label htmlFor="discountPrice" className="block text-sm font-medium text-gray-700">Giá khuyến mãi</label>
-                    <input type="number" name="discountPrice" id="discountPrice" value={formData.discountPrice} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
-                  </div>
                   <div className="col-span-1">
-                    <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">Danh mục</label>
+                    <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700">Danh mục</label>
                     <select
-                      name="category_id"
-                      id="category_id"
+                      name="categoryId"
+                      id="categoryId"
                       required
                       value={formData.category?.id || ''}
                       onChange={e => {
@@ -335,7 +327,6 @@ const ProductManagement = () => {
                   </div>
                    <div className="col-span-2">
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700">Mô tả</label>
-                    {/* Changed to textarea for description */}
                     <textarea name="description" id="description" required value={formData.description} onChange={handleInputChange as any} rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
                   </div>
                   <div className="col-span-1">
@@ -356,7 +347,6 @@ const ProductManagement = () => {
                       />
 
                     {formData.thumbnailUrl && (
-                      // <img src={formData.thumbnailUrl} alt="Thumbnail" className="mt-2 h-24" />
                       <img src={`http://localhost:8080/doan${formData.thumbnailUrl}`} alt={formData.name} width={60} className="mt-2"/>
 
                     )}
@@ -412,4 +402,4 @@ const ProductManagement = () => {
   )
 }
 
-export default ProductManagement 
+export default ProductManagement

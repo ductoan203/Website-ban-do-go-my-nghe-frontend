@@ -115,6 +115,7 @@ const Checkout = () => {
         phone: form.phone,
         shippingAddress: form.address,
         paymentMethod: form.paymentMethod,
+        paymentStatus: form.paymentMethod === 'cod' ? 'UNPAID' : 'PENDING',
         items: items.map(item => ({
           productId: item.id,
           quantity: item.quantity

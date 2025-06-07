@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as adminService from "../../services/admin.service";
+import { toast } from 'react-toastify';
 
 interface Order {
   id: number;
@@ -13,6 +14,7 @@ interface Order {
   createdAt: string;
   status: string;
   items: OrderItem[];
+  cancelledBy?: string;
 }
 
 interface OrderItem {
@@ -27,10 +29,33 @@ interface OrderItem {
 const statusOptions = [
   { value: "PENDING", label: "Chờ xác nhận" },
   { value: "CONFIRMED", label: "Đã xác nhận" },
+  { value: "READY_FOR_DELIVERY", label: "Chờ lấy hàng" },
   { value: "SHIPPED", label: "Đang giao hàng" },
   { value: "DELIVERED", label: "Đã giao hàng" },
   { value: "CANCELLED", label: "Đã hủy" },
+  { value: "RETURNED", label: "Đã trả hàng" },
 ];
+
+const getAllowedStatusTransitions = (currentStatus: string) => {
+  switch (currentStatus) {
+    case "PENDING":
+      return ["CONFIRMED", "CANCELLED"];
+    case "CONFIRMED":
+      return ["READY_FOR_DELIVERY", "CANCELLED"];
+    case "READY_FOR_DELIVERY":
+      return ["SHIPPED", "CANCELLED"];
+    case "SHIPPED":
+      return ["DELIVERED", "RETURNED", "CANCELLED"];
+    case "DELIVERED":
+      return ["RETURNED"];
+    case "CANCELLED":
+      return ["PENDING", "CONFIRMED"];
+    case "RETURNED":
+      return [];
+    default:
+      return [];
+  }
+};
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -45,7 +70,7 @@ const OrderManagement = () => {
     setOrders(res.data.result);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đơn hàng:", error);
-      alert("Không thể lấy danh sách đơn hàng");
+      toast.error("Không thể lấy danh sách đơn hàng.");
     }
   };
 
@@ -54,18 +79,44 @@ const OrderManagement = () => {
   }, []);
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
+    // Tìm đơn hàng hiện tại
+    const currentOrder = orders.find(order => order.id === orderId);
+    if (!currentOrder) {
+      toast.error("Không tìm thấy đơn hàng.");
+      console.log("[DEBUG] handleStatusChange: Không tìm thấy đơn hàng với ID:", orderId);
+      return;
+    }
+
+    // Không làm gì nếu trạng thái mới giống trạng thái hiện tại
+    if (currentOrder.status === newStatus) {
+      console.log("[DEBUG] handleStatusChange: Trạng thái không thay đổi cho đơn hàng ID:", orderId, "Trạng thái cũ:", currentOrder.status, "Trạng thái mới:", newStatus);
+      return;
+    }
+
+    // Kiểm tra tính hợp lệ của chuyển đổi trạng thái
+    const allowedTransitions = getAllowedStatusTransitions(currentOrder.status);
+    console.log("[DEBUG] handleStatusChange: Trạng thái hiện tại:", currentOrder.status, "Các chuyển đổi hợp lệ:", allowedTransitions, "Trạng thái mới được chọn:", newStatus);
+    if (!allowedTransitions.includes(newStatus)) {
+      toast.error("Chuyển đổi trạng thái không hợp lệ.");
+      console.log("[DEBUG] handleStatusChange: Chuyển đổi không hợp lệ cho đơn hàng ID:", orderId, "Từ:", currentOrder.status, "Sang:", newStatus);
+      return;
+    }
+
     try {
-      await adminService.updateOrderStatus(orderId, newStatus);
-      setOrders(
-        orders.map((order) =>
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
+      const response = await adminService.updateOrderStatus(orderId, newStatus) as any;
+      const updatedOrder = response.data.result;
+      const updatedOrders = orders.map((order) =>
+        order.id === orderId ? updatedOrder : order
       );
+      setOrders(updatedOrders);
+      toast.success("Cập nhật trạng thái đơn hàng thành công!");
+      fetchOrders(filterStatus); // Re-fetch orders after successful update
+      console.log("[DEBUG] handleStatusChange: Cập nhật thành công. Orders state sau khi cập nhật:", updatedOrders);
     } catch (error: any) {
-      console.error("Lỗi khi cập nhật trạng thái:", error);
-      alert(
+      console.error("[DEBUG] handleStatusChange: Lỗi khi cập nhật trạng thái:", error);
+      toast.error(
         error?.response?.data?.message ||
-        "Cập nhật trạng thái thất bại. Có thể đơn hàng đã bị huỷ bởi khách hàng."
+        "Cập nhật trạng thái thất bại. Vui lòng thử lại hoặc kiểm tra log backend."
       );
     }
   };
@@ -77,10 +128,10 @@ const OrderManagement = () => {
     try {
       await adminService.deleteOrder(orderId);
       setOrders(orders.filter(order => order.id !== orderId));
-      alert("Xóa đơn hàng thành công");
+      toast.success("Xóa đơn hàng thành công!");
     } catch (error: any) {
       console.error("Lỗi khi xóa đơn hàng:", error);
-      alert(error?.response?.data?.message || "Không thể xóa đơn hàng");
+      toast.error(error?.response?.data?.message || "Không thể xóa đơn hàng.");
     }
   };
 
@@ -146,50 +197,65 @@ const OrderManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.map((o) => (
-            <tr key={o.id} className="border-t text-sm">
-              <td className="p-3">{o.id}</td>
-              <td className="p-3">{o.customerName}</td>
-              <td className="p-3">{o.email}</td>
-              <td className="p-3">{o.phone}</td>
-              <td className="p-3">{o.shippingAddress}</td>
-              <td className="p-3">{new Date(o.createdAt).toLocaleString()}</td>
-              <td className="p-3">{o.total.toLocaleString("vi-VN")}đ</td>
-              <td className="p-3">
-                {o.paymentMethod === "COD" ? "COD" : "Online"} - {o.paymentStatus}
-              </td>
-              <td className="p-3 font-medium">{statusOptions.find(s => s.value === o.status)?.label}</td>
-              <td className="p-3">
-                <select
-                  value={o.status}
-                  onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                  className="border rounded p-1"
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td className="p-3">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleViewOrderDetails(o)}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+          {filteredOrders.map((o) => {
+            console.log(`[DEBUG] Đơn hàng ID ${o.id}: Trạng thái hiện tại: ${o.status}`);
+            const allowedStatusValues = getAllowedStatusTransitions(o.status);
+            console.log(`[DEBUG] Đơn hàng ID ${o.id}: Các trạng thái được phép chuyển đổi:`, allowedStatusValues);
+            const currentStatusLabel = statusOptions.find(s => s.value === o.status)?.label || o.status;
+            
+            return (
+              <tr key={o.id} className="border-t text-sm">
+                <td className="p-3">{o.id}</td>
+                <td className="p-3">{o.customerName}</td>
+                <td className="p-3">{o.email}</td>
+                <td className="p-3">{o.phone}</td>
+                <td className="p-3">{o.shippingAddress}</td>
+                <td className="p-3">{new Date(o.createdAt).toLocaleString()}</td>
+                <td className="p-3">{o.total.toLocaleString("vi-VN")}đ</td>
+                <td className="p-3">
+                  {o.paymentMethod === "COD" ? "COD" : "Online"} - {o.paymentStatus}
+                </td>
+                <td className="p-3 font-medium">
+                  {currentStatusLabel}
+                  {o.status === 'CANCELLED' && o.cancelledBy && ` bởi ${o.cancelledBy}`}
+                </td>
+                <td className="p-3">
+                  <select
+                    value={o.status}
+                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                    className="border rounded p-1"
                   >
-                    Chi tiết
-                  </button>
-                  <button
-                    onClick={() => handleDeleteOrder(o.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                    <option value={o.status}>{currentStatusLabel}</option> {/* Hiển thị trạng thái hiện tại là lựa chọn đầu tiên */}
+                    {allowedStatusValues.map((allowedStatusValue) => {
+                      const option = statusOptions.find(s => s.value === allowedStatusValue);
+                      console.log(`[DEBUG] Đơn hàng ID ${o.id}: Thêm tùy chọn: ${option?.label} (${option?.value})`);
+                      return option ? (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ) : null;
+                    })}
+                  </select>
+                </td>
+                <td className="p-3">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleViewOrderDetails(o)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Chi tiết
+                    </button>
+                    <button
+                      onClick={() => handleDeleteOrder(o.id)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
