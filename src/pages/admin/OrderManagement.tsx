@@ -121,17 +121,21 @@ const OrderManagement = () => {
     }
   };
   
-  const handleDeleteOrder = async (orderId: number) => {
+  const handleDeleteOrder = async (order: Order) => {
+    if (order.status !== "PENDING" && order.status !== "CANCELLED") {
+      toast.error("Chỉ có thể xóa đơn hàng ở trạng thái \"Chờ xác nhận\" hoặc \"Đã hủy\".");
+      return;
+    }
     if (!window.confirm("Bạn có chắc chắn muốn xóa đơn hàng này?")) {
       return;
     }
     try {
-      await adminService.deleteOrder(orderId);
-      setOrders(orders.filter(order => order.id !== orderId));
+      await adminService.deleteOrder(order.id);
+      setOrders(orders.filter(item => item.id !== order.id));
       toast.success("Xóa đơn hàng thành công!");
     } catch (error: any) {
       console.error("Lỗi khi xóa đơn hàng:", error);
-      toast.error(error?.response?.data?.message || "Không thể xóa đơn hàng.");
+      toast.error(error?.response?.data?.message || "Xóa đơn hàng thất bại. Vui lòng kiểm tra lại hoặc thử lại sau.");
     }
   };
 
@@ -151,9 +155,11 @@ const OrderManagement = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-4 flex items-center gap-4">
-        <h1 className="text-xl font-bold">Quản lý đơn hàng</h1>
-        <div className="flex-1 flex gap-4">
+      <div className="sm:flex sm:items-center mb-4">
+        <div className="sm:flex-auto">
+          <h1 className="text-xl font-semibold text-gray-900">Quản lý đơn hàng</h1>
+        </div>
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
           <input
             type="text"
             placeholder="Tìm kiếm theo mã đơn, tên, email hoặc số điện thoại..."
@@ -161,22 +167,27 @@ const OrderManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 px-3 py-2 border rounded"
           />
-        <select
-          value={filterStatus}
-          onChange={(e) => {
-            const status = e.target.value;
-            setFilterStatus(status);
-            fetchOrders(status);
-          }}
-          className="px-3 py-2 border rounded"
-        >
-          <option value="">Tất cả trạng thái</option>
-          {statusOptions.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+          <button
+            onClick={() => fetchOrders(filterStatus)}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Tìm kiếm
+          </button>
+          <select
+            value={filterStatus}
+            onChange={(e) => {
+              const status = e.target.value;
+              setFilterStatus(status);
+            }}
+            className="px-3 py-2 border rounded"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {statusOptions.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -246,7 +257,7 @@ const OrderManagement = () => {
                       Chi tiết
                     </button>
                     <button
-                      onClick={() => handleDeleteOrder(o.id)}
+                      onClick={() => handleDeleteOrder(o)}
                       className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                     >
                       Xóa

@@ -14,7 +14,7 @@ const AdminLayout = () => {
     { path: '/admin/orders', label: 'Đơn hàng', icon: '🛒' },
     { path: '/admin/customers', label: 'Khách hàng', icon: '👥' },
     { path: '/admin/reports', label: 'Báo cáo', icon: '📈' },
-  
+    { path: '/admin/contact-messages', label: 'Tin nhắn liên hệ', icon: '✉️' },
   ]
 
   return (
@@ -72,7 +72,7 @@ const AdminLayout = () => {
       <div className={`${isSidebarOpen ? 'ml-64' : ''} transition-all duration-300`}>
         {/* Header */}
         <header className="bg-white shadow-sm">
-          <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center h-16 px-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
               className={`p-2 rounded-md hover:bg-gray-100 ${
@@ -94,20 +94,18 @@ const AdminLayout = () => {
               </svg>
             </button>
 
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-600">
-                Xin chào, {user?.name || 'Admin'}
-              </span>
-              <button
-                onClick={() => {
-                  authService.logout()
-                  window.location.href = '/login'
-                }}
-                className="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700"
-              >
-                Đăng xuất
-              </button>
-            </div>
+            <span className="ml-4 text-gray-600">
+              Xin chào, {user?.name || 'Admin'}
+            </span>
+            <button
+              onClick={() => {
+                authService.logout()
+                window.location.href = '/login'
+              }}
+              className="ml-auto px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700"
+            >
+              Đăng xuất
+            </button>
           </div>
         </header>
 

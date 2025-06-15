@@ -98,7 +98,20 @@ const Checkout = () => {
   const grandTotal = total + shippingFee;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      // Chỉ cho phép số và giới hạn độ dài từ 6 đến 10
+      const numericValue = value.replace(/[^0-9]/g, ''); // Xóa tất cả ký tự không phải số
+      setForm({ ...form, [name]: numericValue.slice(0, 10) }); // Cắt chuỗi nếu dài hơn 10
+    } else {
+      // Xử lý các trường khác
+      if (e.target instanceof HTMLInputElement && e.target.type === 'checkbox') {
+        setForm({ ...form, [name]: e.target.checked });
+      } else {
+        setForm({ ...form, [name]: value });
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,39 +225,84 @@ const Checkout = () => {
         {/* Thông tin khách hàng */}
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow border">
           <h2 className="text-lg font-semibold text-[#8B4513] mb-2">Thông tin khách hàng</h2>
-          <input
-            name="customerName"
-            required
-            placeholder="Họ và tên"
-            className="w-full border rounded px-3 py-2"
-            value={form.customerName}
-            onChange={handleChange}
-          />
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="Email"
-            className="w-full border rounded px-3 py-2"
-            value={form.email}
-            onChange={handleChange}
-          />
-          <input
-            name="phone"
-            required
-            placeholder="Số điện thoại"
-            className="w-full border rounded px-3 py-2"
-            value={form.phone}
-            onChange={handleChange}
-          />
-          <input
-            name="address"
-            required
-            placeholder="Địa chỉ nhận hàng"
-            className="w-full border rounded px-3 py-2"
-            value={form.address}
-            onChange={handleChange}
-          />
+          
+          {/* Trường Email - Di chuyển lên đầu và không cho phép sửa */} 
+          <div className="flex items-center space-x-2">
+            <label htmlFor="email" className="w-1/4 text-gray-700">Email:</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="Email"
+              className="w-3/4 border rounded px-3 py-2 bg-gray-100"
+              value={form.email}
+              onChange={handleChange}
+              readOnly // Đặt trường email là chỉ đọc
+            />
+          </div>
+
+          {/* Trường Họ và tên */} 
+          <div className="flex items-center space-x-2">
+            <label htmlFor="customerName" className="w-1/4 text-gray-700">Họ và tên:</label>
+            <input
+              id="customerName"
+              name="customerName"
+              required
+              placeholder="Họ và tên"
+              className="w-3/4 border rounded px-3 py-2"
+              value={form.customerName}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Trường Số điện thoại */} 
+          <div className="flex items-center space-x-2">
+            <label htmlFor="phone" className="w-1/4 text-gray-700">Số điện thoại:</label>
+            <input
+              id="phone"
+              name="phone"
+              required
+              placeholder="Số điện thoại"
+              className="w-3/4 border rounded px-3 py-2"
+              value={form.phone}
+              onChange={handleChange}
+              inputMode="numeric" // Gợi ý bàn phím số trên thiết bị di động
+              pattern="^[0-9]{6,10}$" // Chỉ chấp nhận 6-10 chữ số (cho xác thực form cuối cùng)
+              title="Số điện thoại phải là 6 đến 10 chữ số." // Thông báo lỗi khi không khớp pattern
+              onKeyDown={(e) => {
+                // Allow: backspace, delete, tab, escape, enter, numbers (0-9)
+                // Allow: Ctrl/Cmd+A, Ctrl/Cmd+C, Ctrl/Cmd+V, Ctrl/Cmd+X (for copy/paste functionality)
+                if (
+                  ![8, 46, 9, 27, 13, 110, 190].includes(e.keyCode) && // Basic functional keys
+                  !(e.keyCode === 65 && (e.ctrlKey || e.metaKey)) && // Ctrl/Cmd+A
+                  !(e.keyCode === 67 && (e.ctrlKey || e.metaKey)) && // Ctrl/Cmd+C
+                  !(e.keyCode === 86 && (e.ctrlKey || e.metaKey)) && // Ctrl/Cmd+V
+                  !(e.keyCode === 88 && (e.ctrlKey || e.metaKey)) && // Ctrl/Cmd+X
+                  !(e.keyCode >= 35 && e.keyCode <= 40) && // Home, End, Left, Up, Right, Down
+                  (e.keyCode < 48 || e.keyCode > 57) && // Numbers 0-9 (top row)
+                  (e.keyCode < 96 || e.keyCode > 105) // Numpad 0-9
+                ) {
+                  e.preventDefault();
+                }
+              }}
+            />
+          </div>
+
+          {/* Trường Địa chỉ nhận hàng */} 
+          <div className="flex items-center space-x-2">
+            <label htmlFor="address" className="w-1/4 text-gray-700">Địa chỉ:</label>
+            <input
+              id="address"
+              name="address"
+              required
+              placeholder="Địa chỉ nhận hàng"
+              className="w-3/4 border rounded px-3 py-2"
+              value={form.address}
+              onChange={handleChange}
+            />
+          </div>
+
           <select
             name="paymentMethod"
             className="w-full border rounded px-3 py-2"

@@ -125,13 +125,6 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white shadow-md">
-      {/* Dải thông báo */}
-      <div className="bg-gradient-to-r from-[#8B4513] to-[#6B3410] text-white text-center py-2 text-sm">
-        <div className="container mx-auto px-4">
-          <p>🎉 Miễn phí vận chuyển đơn từ 500.000đ | Giao hàng toàn quốc</p>
-        </div>
-      </div>
-
       {/* Header chính */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-4">
@@ -255,8 +248,8 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
                       Đơn hàng của tôi
                     </Link>
                     <button
-                      onClick={handleLogout}
                       className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700"
+                      onClick={handleLogout}
                     >
                       Đăng xuất
                     </button>
@@ -264,33 +257,59 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
                 )}
               </div>
             ) : (
-              <Link to="/login" className="text-[#8B4513] hover:text-[#6B3410] transition flex items-center gap-2">
+              <Link to="/login" className="flex items-center gap-2 text-gray-600 hover:text-[#8B4513] transition">
                 <FaUser className="text-xl" />
                 <span className="hidden md:inline">Đăng nhập</span>
               </Link>
             )}
             <button
-              className="md:hidden text-[#8B4513]"
+              className="md:hidden text-gray-600 hover:text-[#8B4513] transition text-xl"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+              {isMenuOpen ? <FaTimes /> : <FaBars />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Menu ngang */}
-      <nav className={`bg-[#8B4513] text-white ${isMenuOpen ? 'block' : 'hidden'} md:block`}>
+      {/* Navigation Bar */}
+      <nav className="bg-[#8B4513] text-white py-3 hidden md:block">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-center md:space-x-8 py-3">
-            <Link to="/" className="text-white hover:text-[#f3e3c3] transition py-2 md:py-0">Trang chủ</Link>
-            <Link to="/products" className="text-white hover:text-[#f3e3c3] transition py-2 md:py-0">Sản phẩm</Link>
-            <Link to="/about" className="text-white hover:text-[#f3e3c3] transition py-2 md:py-0">Giới thiệu</Link>
-            <Link to="/blog" className="text-white hover:text-[#f3e3c3] transition py-2 md:py-0">Blog</Link>
-            <Link to="/contact" className="text-white hover:text-[#f3e3c3] transition py-2 md:py-0">Liên hệ</Link>
-          </div>
+          <ul className="flex justify-center space-x-20 text-lg font-semibold">
+            <li><Link to="/" className="text-white hover:text-amber-200 transition">Trang chủ</Link></li>
+            <li><Link to="/products" className="text-white hover:text-amber-200 transition">Sản phẩm</Link></li>
+            <li><Link to="/about" className="text-white hover:text-amber-200 transition">Giới thiệu</Link></li>
+            <li><Link to="/contact" className="text-white hover:text-amber-200 transition">Liên hệ</Link></li>
+          </ul>
         </div>
       </nav>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden fixed inset-0 bg-white bg-opacity-95 z-40 flex flex-col items-center justify-center">
+          <button 
+            className="absolute top-4 right-4 text-gray-600 hover:text-[#8B4513] transition text-2xl"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <FaTimes />
+          </button>
+          <ul className="text-2xl font-bold text-[#8B4513] space-y-10">
+            <li><Link to="/" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Trang chủ</Link></li>
+            <li><Link to="/products" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Sản phẩm</Link></li>
+            <li><Link to="/about" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Giới thiệu</Link></li>
+            <li><Link to="/contact" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Liên hệ</Link></li>
+            {isLoggedIn && currentUser ? (
+              <>
+                <li><Link to="/user" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Tài khoản của tôi</Link></li>
+                <li><Link to="/user/orders" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Đơn hàng của tôi</Link></li>
+                <li><button onClick={handleLogout} className="w-full text-left hover:text-amber-200 transition">Đăng xuất</button></li>
+              </>
+            ) : (
+              <li><Link to="/login" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Đăng nhập</Link></li>
+            )}
+          </ul>
+        </div>
+      )}
     </header>
   )
 }

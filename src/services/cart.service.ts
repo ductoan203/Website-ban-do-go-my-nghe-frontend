@@ -63,8 +63,8 @@ const cartService = {
       });
       // Có thể thêm toast thành công ở đây nếu muốn
       // toast.success('Sản phẩm đã được thêm vào giỏ hàng!');
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
+    } catch (error: any) {
+      if (error.response) {
         // Kiểm tra mã lỗi cụ thể từ backend
         if (error.response.data && error.response.data.code === 1023) {
           toast.error(error.response.data.message || 'Số lượng sản phẩm trong giỏ hàng vượt quá tồn kho');
@@ -82,9 +82,23 @@ const cartService = {
 
   async updateCartItem(productId: number, quantity: number) {
     const token = getToken();
-    await axios.put(`${API}/update`, { productId, quantity }, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    try {
+      await axios.put(`${API}/update`, { productId, quantity }, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      toast.success('Cập nhật số lượng thành công!');
+    } catch (error: any) {
+      if (error.response) {
+        if (error.response.data && error.response.data.code === 1023) {
+          toast.error(error.response.data.message || 'Số lượng sản phẩm vượt quá tồn kho');
+        } else {
+          toast.error('Đã xảy ra lỗi khi cập nhật giỏ hàng.');
+        }
+      } else {
+        toast.error('Đã xảy ra lỗi không xác định.');
+      }
+      throw error; // Re-throw lỗi để CartContext có thể xử lý
+    }
   },
 
   async removeFromCart(productId: number) {

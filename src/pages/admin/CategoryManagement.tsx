@@ -114,38 +114,34 @@ const CategoryManagement = () => {
           <h1 className="text-xl font-semibold text-gray-900">Quản lý danh mục</h1>
           <p className="mt-2 text-sm text-gray-700">Danh sách các danh mục sản phẩm</p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-           <button
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Tìm kiếm danh mục..."
+            className="w-64 px-3 py-2 border rounded"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            }}
+          />
+          <button
+            onClick={handleSearch}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Tìm kiếm
+          </button>
+          <button
             type="button"
             onClick={() => handleOpenModal()}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
           >
             Thêm danh mục
           </button>
         </div>
       </div>
-      <div className="flex justify-between items-center mb-4">
-         <div className="flex items-center">
-           <input
-             type="text"
-             placeholder="Tìm kiếm danh mục..."
-             className="px-3 py-2 border rounded w-64"
-             value={searchTerm}
-             onChange={handleSearchChange}
-             onKeyPress={(e) => {
-                 if (e.key === 'Enter') {
-                     handleSearch();
-                 }
-             }}
-           />
-           <button
-             onClick={handleSearch}
-             className="ml-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-           >
-             Tìm kiếm
-           </button>
-         </div>
-       </div>
 
       <div className="mt-8 flex flex-col">
         {loading ? (

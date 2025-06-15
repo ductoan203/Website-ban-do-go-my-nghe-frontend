@@ -7,7 +7,7 @@ export interface UserProfile {
   phoneNumber?: string;
   address?: string;
   role: string;
-  verified: boolean;
+  isVerified: boolean;
 }
 
 export interface UpdateUserProfile {

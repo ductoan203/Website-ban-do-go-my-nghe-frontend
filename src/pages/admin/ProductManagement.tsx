@@ -202,25 +202,28 @@ const ProductManagement = () => {
             Danh sách tất cả sản phẩm đồ gỗ mỹ nghệ Hùng Dũng
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center gap-4">
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Tìm kiếm sản phẩm theo tên, chất liệu, kích thước, danh mục..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64 px-3 py-2 border rounded"
+          />
+          <button
+            onClick={() => fetchProducts()}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Tìm kiếm
+          </button>
           <button
             type="button"
             onClick={() => handleOpenModal()}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
           >
             Thêm sản phẩm
           </button>
         </div>
-      </div>
-
-      <div className="mt-6 mb-4 flex justify-center">
-        <input
-          type="text"
-          placeholder="Tìm kiếm sản phẩm theo tên, chất liệu, kích thước, danh mục..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-        />
       </div>
 
       <div className="mt-8 flex flex-col">

@@ -35,7 +35,7 @@ const Login = () => {
         navigate('/');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Login error caught in Login.tsx:', err);
       // Bắt lỗi 1010 hoặc UNVERIFIED_ACCOUNT từ authService
       if (err.code === 1010 || err.message === 'UNVERIFIED_ACCOUNT') {
         setError('Tài khoản chưa được xác thực. Vui lòng kiểm tra email để xác thực.');

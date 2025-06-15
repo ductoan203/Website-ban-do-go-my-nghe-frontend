@@ -33,6 +33,7 @@ import ResetPassword from './pages/ResetPassword'
 import PasswordResetForm from './pages/PasswordResetForm'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import ContactMessages from './pages/admin/ContactMessages'
 
 
 // Protected Route component cho admin
@@ -121,6 +122,7 @@ function App() {
             <Route path="reports" element={<Reports />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="comments" element={<AdminCommentManagement />} />
+            <Route path="contact-messages" element={<ContactMessages />} />
           </Route>
 
           {/* Catch all route */}

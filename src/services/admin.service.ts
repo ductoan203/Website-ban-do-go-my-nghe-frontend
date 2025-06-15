@@ -40,7 +40,7 @@ export const updateOrderStatus = (id: number, status: string) =>
 export const deleteOrder = (id: number) => 
   axios.delete(`${API_URL}/orders/${id}`);
 
-export const getReportData = (timeRange: string) => axios.get(`${API_URL}/reports`, { params: { timeRange } });
+export const getReportData = (startDate: string, endDate: string, status?: string) => axios.get(`${API_URL}/reports`, { params: { startDate, endDate, status } });
 
 export const getPublicProducts = () => axios.get('http://localhost:8080/doan/products');
 

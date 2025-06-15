@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import * as adminService from '../../services/admin.service'
+import moment from 'moment';
 
 interface Product {
   name: string
@@ -13,40 +14,41 @@ interface Category {
   percentage: number
 }
 
-interface DailySale {
-  date: string
-  sales: string
-}
-
 interface SalesData {
   totalSales: string
   totalOrders: number
   averageOrderValue: string
   topProducts: Product[]
   salesByCategory: Category[]
-  dailySales: DailySale[]
 }
 
 const Reports = () => {
-  const [timeRange, setTimeRange] = useState('week')
+  const [startDate, setStartDate] = useState(moment().subtract(7, 'days').format('YYYY-MM-DD'));
+  const [endDate, setEndDate] = useState(moment().subtract(1, 'days').format('YYYY-MM-DD'));
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
   const [salesData, setSalesData] = useState<SalesData>({
     totalSales: '0đ',
     totalOrders: 0,
     averageOrderValue: '0đ',
     topProducts: [],
     salesByCategory: [],
-    dailySales: [],
   })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchReportData()
-  }, [timeRange])
+  }, [startDate, endDate, orderStatusFilter])
 
   const fetchReportData = async () => {
+    if (moment(startDate).isAfter(moment(endDate))) {
+      alert("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
+      setLoading(false);
+      return;
+    }
+    console.log("Fetching report data for date range:", startDate, "to", endDate, "with status:", orderStatusFilter);
     try {
       setLoading(true)
-      const response = await adminService.getReportData(timeRange) as any
+      const response = await adminService.getReportData(startDate, endDate, orderStatusFilter) as any
       const data = response.data.result
 
       setSalesData({
@@ -63,10 +65,6 @@ const Reports = () => {
           sales: Number(category.sales).toLocaleString() + 'đ',
           percentage: category.percentage
         })),
-        dailySales: data.dailySales.map((sale: any) => ({
-          date: sale.date,
-          sales: Number(sale.sales).toLocaleString() + 'đ'
-        }))
       })
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu báo cáo:', error)
@@ -75,6 +73,17 @@ const Reports = () => {
     }
   }
 
+  const orderStatuses = [
+    { value: '', label: 'Tất cả trạng thái' },
+    { value: "PENDING", label: "Chờ xác nhận" },
+    { value: "CONFIRMED", label: "Đã xác nhận" },
+    { value: "READY_FOR_DELIVERY", label: "Chờ lấy hàng" },
+    { value: "SHIPPED", label: "Đang giao hàng" },
+    { value: "DELIVERED", label: "Đã giao hàng" },
+    { value: "CANCELLED", label: "Đã hủy" },
+    { value: "RETURNED", label: "Đã trả hàng" },
+  ];
+
   return (
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
@@ -82,16 +91,36 @@ const Reports = () => {
           <h1 className="text-xl font-semibold text-gray-900">Báo cáo thống kê</h1>
           <p className="mt-2 text-sm text-gray-700">Tổng quan về doanh số và hoạt động kinh doanh</p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
+          <label htmlFor="startDate" className="text-sm font-medium text-gray-700">Từ ngày:</label>
+          <input
+            type="date"
+            id="startDate"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2"
+            disabled={loading}
+          />
+          <label htmlFor="endDate" className="text-sm font-medium text-gray-700">Đến ngày:</label>
+          <input
+            type="date"
+            id="endDate"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2"
+            disabled={loading}
+          />
+          <label htmlFor="orderStatus" className="text-sm font-medium text-gray-700">Trạng thái:</label>
           <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            id="orderStatus"
+            value={orderStatusFilter}
+            onChange={(e) => setOrderStatusFilter(e.target.value)}
+            className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2"
             disabled={loading}
           >
-            <option value="week">Tuần này</option>
-            <option value="month">Tháng này</option>
-            <option value="year">Năm nay</option>
+            {orderStatuses.map((status) => (
+              <option key={status.value} value={status.value}>{status.label}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -107,27 +136,6 @@ const Reports = () => {
             <OverviewCard title="Tổng doanh số" value={salesData.totalSales} />
             <OverviewCard title="Tổng đơn hàng" value={salesData.totalOrders} />
             <OverviewCard title="Giá trị đơn hàng trung bình" value={salesData.averageOrderValue} />
-          </div>
-
-          {/* Doanh số theo ngày */}
-          <div className="mt-8 bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Doanh số theo ngày</h2>
-            <div className="h-64 flex items-end space-x-2">
-              {salesData.dailySales.map((day) => (
-                <div key={day.date} className="flex-1">
-                  <div
-                    className="bg-blue-500 rounded-t"
-                    style={{
-                      height: `${
-                        (parseInt(day.sales.replace(/[^\d]/g, '')) /
-                          Math.max(1, parseInt(salesData.dailySales[0].sales.replace(/[^\d]/g, '')))) * 100
-                      }%`
-                    }}
-                  ></div>
-                  <div className="text-xs text-center mt-2">{day.date}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Bán chạy và theo danh mục */}

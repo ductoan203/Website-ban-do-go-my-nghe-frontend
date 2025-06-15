@@ -50,7 +50,7 @@ class AuthService {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       const profile = await userService.getProfile();
   
-      const isProfileVerified = profile.verified === true;
+      const isProfileVerified = profile.isVerified === true;
 
       if (
         decoded.roles?.[0] === 'USER' &&

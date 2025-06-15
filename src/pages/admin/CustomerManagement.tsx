@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as adminService from "../../services/admin.service";
+import { toast } from 'react-toastify';
 
 interface Customer {
   userId: number;
@@ -7,7 +8,7 @@ interface Customer {
   email: string;
   phoneNumber: string;
   address: string;
-  verified: boolean;
+  isVerified: boolean;
   active: boolean;
 }
 
@@ -28,6 +29,7 @@ const CustomerManagement = () => {
       setCustomers(res.data.result);
     } catch (err) {
       console.error("Lỗi khi lấy danh sách khách hàng", err);
+      toast.error("Không thể lấy danh sách khách hàng.");
     }
   };
 
@@ -36,15 +38,20 @@ const CustomerManagement = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = async (customerId: number) => {
+  const handleDelete = async (customer: Customer) => {
+    if (customer.isVerified) {
+      toast.error("Không thể xóa tài khoản đã xác thực.");
+      return;
+    }
     if (window.confirm("Bạn có chắc chắn muốn xóa khách hàng này?")) {
       try {
-        await adminService.deleteCustomer(customerId);
+        await adminService.deleteCustomer(customer.userId);
         // Cập nhật lại danh sách sau khi xóa
+        toast.success("Xóa khách hàng thành công!");
         fetchCustomers();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Lỗi khi xóa khách hàng:", err);
-        alert("Có lỗi xảy ra khi xóa khách hàng");
+        toast.error(err?.response?.data?.message || "Xóa khách hàng thất bại. Vui lòng kiểm tra lại hoặc thử lại sau.");
       }
     }
   };
@@ -53,7 +60,7 @@ const CustomerManagement = () => {
     const phoneRegex = /^[0-9]{10}$/;
 
     if (!phoneRegex.test(updatedCustomer.phoneNumber)) {
-      alert("Số điện thoại phải gồm đúng 10 chữ số.");
+      toast.error("Số điện thoại phải gồm đúng 10 chữ số.");
       return;
     }
   
@@ -62,10 +69,11 @@ const CustomerManagement = () => {
       setIsEditModalOpen(false);
       setEditingCustomer(null);
       // Cập nhật lại danh sách sau khi sửa
+      toast.success("Cập nhật thông tin khách hàng thành công!");
       fetchCustomers();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Lỗi khi cập nhật khách hàng:", err);
-      alert("Có lỗi xảy ra khi cập nhật thông tin khách hàng");
+      toast.error(err?.response?.data?.message || "Cập nhật thông tin khách hàng thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -99,43 +107,42 @@ const CustomerManagement = () => {
 
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(newCustomerData.phoneNumber)) {
-      alert("Số điện thoại phải gồm đúng 10 chữ số.");
+      toast.error("Số điện thoại phải gồm đúng 10 chữ số.");
       return;
     }
 
     // Basic email validation (more robust validation might be needed)
     if (!newCustomerData.email.includes('@') || !newCustomerData.email.includes('.')) {
-        alert("Email không hợp lệ.");
+        toast.error("Email không hợp lệ.");
         return;
     }
 
     // Basic password validation (adjust as needed)
     if (newCustomerData.password.length < 6) {
-        alert("Mật khẩu phải có ít nhất 6 ký tự.");
+        toast.error("Mật khẩu phải có ít nhất 6 ký tự.");
         return;
     }
   
     try {
       await adminService.createCustomer(newCustomerData);
-      alert("Thêm khách hàng thành công!");
+      toast.success("Thêm khách hàng thành công!");
       setIsAddModalOpen(false);
       fetchCustomers(); // Refresh list
     } catch (err: any) {
       console.error("Lỗi khi thêm khách hàng:", err);
       // Handle specific errors if needed (e.g., email already exists)
       const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi thêm khách hàng";
-      alert(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Quản lý khách hàng</h1>
-      
-      {/* Thanh tìm kiếm bên trái, nút Thêm bên phải */}
-      <div className="flex justify-between items-center mb-4">
-        {/* Thanh tìm kiếm */}
-        <div className="flex items-center">
+      <div className="sm:flex sm:items-center mb-4">
+        <div className="sm:flex-auto">
+          <h1 className="text-xl font-semibold text-gray-900">Quản lý khách hàng</h1>
+        </div>
+        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
           <input
             type="text"
             placeholder="Tìm kiếm khách hàng..."
@@ -143,10 +150,12 @@ const CustomerManagement = () => {
             value={searchTerm}
             onChange={handleSearchChange}
           />
-        </div>
-
-        {/* Nút Thêm khách hàng */}
-        <div>
+          <button
+            onClick={handleSearch}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Tìm kiếm
+          </button>
           <button
             onClick={handleAddCustomerClick}
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
@@ -177,12 +186,12 @@ const CustomerManagement = () => {
               <td className="px-4 py-2">
                 <span
                   className={`inline-block w-28 text-center px-2 py-1 text-sm font-medium rounded-full ${
-                    customer.verified
+                    customer.isVerified
                       ? "bg-green-100 text-green-700 border border-green-500"
                       : "bg-yellow-100 text-yellow-700 border border-yellow-500"
                   }`}
                 >
-                  {customer.verified ? "Đã xác thực" : "Chưa xác thực"}
+                  {customer.isVerified ? "Đã xác thực" : "Chưa xác thực"}
                 </span>
               </td>   
               <td className="px-4 py-2">
@@ -194,7 +203,7 @@ const CustomerManagement = () => {
                     Sửa
                   </button>
                   <button
-                    onClick={() => handleDelete(customer.userId)}
+                    onClick={() => handleDelete(customer)}
                     className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                   >
                     Xóa

@@ -139,8 +139,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantity = async (id: number, quantity: number) => {
     if (quantity < 1) return;
     if (isLoggedIn()) {
-      await cartService.updateCartItem(id, quantity);
-      await reload();
+      try {
+        await cartService.updateCartItem(id, quantity);
+        await reload();
+      } catch (error) {
+        console.error('Lỗi khi cập nhật số lượng giỏ hàng BE:', error);
+        // Không reload() hoặc cập nhật state nếu có lỗi để giữ số lượng cũ
+      }
     } else {
       setItems(prev => {
         const newCart = prev.map(i => i.id === id ? { ...i, quantity } : i);
