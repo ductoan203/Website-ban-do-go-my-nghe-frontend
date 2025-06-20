@@ -28,7 +28,9 @@ interface OrderRequest {
   phone: string;
   shippingAddress: string;
   paymentMethod: string;
+  paymentStatus: string;
   items: OrderItemRequest[];
+  total: number;
 }
 
 // interface OrderResponse đã được định nghĩa cục bộ nên giữ lại
@@ -132,86 +134,84 @@ const Checkout = () => {
         items: items.map(item => ({
           productId: item.id,
           quantity: item.quantity
-        })) as OrderItemRequest[] // Ép kiểu sang OrderItemRequest[]
+        })) as OrderItemRequest[],
+        total: grandTotal
       };
 
       console.log("Sending order request:", orderPayload);
 
-      const response = await axios.post<OrderResponse>(
-        'http://localhost:8080/doan/payment/checkout',
-        orderPayload,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+      if (form.paymentMethod === 'cod') {
+        try {
+          const response = await axios.post<OrderResponse>(
+            'http://localhost:8080/doan/payment/checkout',
+            orderPayload,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+          const order = response.data.result;
+          clearCart();
+          navigate('/order-confirmation', { state: { orderData: order } });
+        } catch (err: any) {
+          console.error("❌ Lỗi khi đặt hàng:", err.response?.data || err.message);
+          setError(err.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');
+        } finally {
+          setLoading(false);
         }
-      );
-
-      console.log("✅ Order request successful. Response:", response.data);
-
-      const order = response.data.result;
-
+        return;
+      }
+      // Nếu là momo/vnpay thì chỉ gọi tạo URL thanh toán, không gọi checkout
       if (form.paymentMethod === 'momo') {
         try {
           const momoResponse = await axios.post<ApiResponse<string>>(
             'http://localhost:8080/doan/payment/momo/create',
-            null,
+            orderPayload,
             {
-              params: {
-                orderId: order.id,
-                amount: Math.round(order.total), // Đảm bảo amount là số nguyên
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
               },
             }
           );
-
-          console.log("🌐 Momo URL trả về:", momoResponse.data);
-
           if (momoResponse.data.result) {
-            // Chuyển hướng người dùng đến URL Momo để thanh toán
             window.location.href = momoResponse.data.result;
           } else {
             setError("Không nhận được URL thanh toán từ Momo");
           }
         } catch (momoErr: any) {
-          console.error("❌ Lỗi khi tạo URL Momo:", momoErr.response?.data || momoErr.message);
           setError("Không thể tạo URL thanh toán Momo: " + (momoErr.response?.data?.message || momoErr.message));
+        } finally {
+          setLoading(false);
         }
+        return;
       }
-      else if (form.paymentMethod === 'vnpay') {
+      if (form.paymentMethod === 'vnpay') {
         try {
-          const token = localStorage.getItem("token");
-
-          const vnpayResponse = await axios.get<string>(
+          const vnpayResponse = await axios.post<string>(
             'http://localhost:8080/doan/payment/vnpay/create',
+            orderPayload,
             {
-              params: {
-                amount: order.total,
-                info: `Thanh toán đơn hàng #${order.id}`,
-                orderId: order.id, // ✅ THÊM VÀO ĐÂY
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
               },
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
             }
           );
-
-          console.log("🌐 VNPAY URL trả về:", vnpayResponse.data);
-
           if (vnpayResponse.data) {
             window.location.href = vnpayResponse.data;
           } else {
             setError("Không nhận được URL thanh toán từ VNPAY");
           }
         } catch (vnpErr: any) {
-          console.error("❌ Lỗi khi tạo URL VNPAY:", vnpErr.response?.data || vnpErr.message);
           setError("Không thể tạo URL thanh toán VNPAY");
+        } finally {
+          setLoading(false);
         }
-      }
-
-      if (form.paymentMethod === 'cod') {
-        clearCart();
-        navigate('/order-confirmation', { state: { orderData: order } });
+        return;
       }
     } catch (err: any) {
       console.error("❌ Lỗi khi đặt hàng:", err.response?.data || err.message);
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');
-
     } finally {
       setLoading(false);
     }
