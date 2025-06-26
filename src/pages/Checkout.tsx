@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import axios from 'axios';
+import { createPaymentLink, openPaymentInNewTab } from '../services/payos.service';
 // Định nghĩa types cục bộ dựa trên cấu trúc dữ liệu
 interface ApiResponse<T> {
   code: number;
@@ -46,7 +47,7 @@ interface MomoResponse {
 }
 
 const SHIPPING_FREE_THRESHOLD = 500000;
-const SHIPPING_FEE = 30000;
+const SHIPPING_FEE = 0;
 
 const Checkout = () => {
   const { items, total, clearCart } = useCart(); // items sẽ có type CartItem[]
@@ -160,7 +161,6 @@ const Checkout = () => {
         }
         return;
       }
-      // Nếu là momo/vnpay thì chỉ gọi tạo URL thanh toán, không gọi checkout
       if (form.paymentMethod === 'momo') {
         try {
           const momoResponse = await axios.post<ApiResponse<string>>(
@@ -204,6 +204,44 @@ const Checkout = () => {
           }
         } catch (vnpErr: any) {
           setError("Không thể tạo URL thanh toán VNPAY");
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+      if (form.paymentMethod === 'payos') {
+        try {
+          // 1. Tạo đơn hàng trước (giống COD)
+          const response = await axios.post<OrderResponse>(
+            'http://localhost:8080/doan/payment/checkout',
+            orderPayload,
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
+          const order = response.data.result;
+          // 2. Tạo link PayOS với orderId vừa nhận được
+          const payOSPayload = {
+            orderCode: parseInt(order.id),
+            amount: Math.round(grandTotal),
+            description: `Thanh toán đơn hàng #${order.id}`,
+            buyerName: form.customerName,
+            buyerEmail: form.email,
+            buyerPhone: form.phone,
+            buyerAddress: form.address,
+            items: items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: Math.round(item.price)
+            }))
+          };
+          const paymentUrl = await createPaymentLink(payOSPayload);
+          openPaymentInNewTab(paymentUrl);
+          // KHÔNG gọi clearCart() ở đây!
+          // Có thể điều hướng sang trang xác nhận nếu muốn
+          // navigate('/order-confirmation', { state: { orderData: order } });
+        } catch (err: any) {
+          setError("Không thể tạo đơn hàng hoặc link thanh toán PayOS: " + (err.response?.data?.message || err.message));
         } finally {
           setLoading(false);
         }
@@ -312,11 +350,12 @@ const Checkout = () => {
             <option value="cod">Thanh toán khi nhận hàng (COD)</option>
             <option value="momo">Thanh toán qua Momo</option>
             <option value="vnpay">Thanh toán qua VNPAY</option>
+            <option value="payos">Thanh toán qua PayOS</option>
           </select>
           <div className="flex justify-between text-base">
             <span>Phí vận chuyển:</span>
             <span className={shippingFee === 0 ? 'text-green-600 font-semibold' : ''}>
-              {shippingFee === 0 ? 'Miễn phí' : shippingFee.toLocaleString('vi-VN') + 'đ'}
+              {shippingFee === 0 ? 'Miễn phí' : (shippingFee as number).toLocaleString('vi-VN') + 'đ'}
             </span>
           </div>
           <div className="font-bold text-lg text-[#8B4513] flex justify-between">
@@ -354,7 +393,7 @@ const Checkout = () => {
           <div className="flex justify-between text-base">
             <span>Phí vận chuyển:</span>
             <span className={shippingFee === 0 ? 'text-green-600 font-semibold' : ''}>
-              {shippingFee === 0 ? 'Miễn phí' : shippingFee.toLocaleString('vi-VN') + 'đ'}
+              {shippingFee === 0 ? 'Miễn phí' : (shippingFee as number).toLocaleString('vi-VN') + 'đ'}
             </span>
           </div>
           <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">

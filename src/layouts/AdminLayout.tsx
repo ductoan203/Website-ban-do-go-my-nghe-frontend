@@ -13,6 +13,8 @@ const AdminLayout = () => {
     { path: '/admin/products', label: 'Sản phẩm', icon: '📦' },
     { path: '/admin/orders', label: 'Đơn hàng', icon: '🛒' },
     { path: '/admin/customers', label: 'Khách hàng', icon: '👥' },
+    { path: '/admin/comments', label: 'Bình luận', icon: '💬' },
+    // { path: '/admin/news', label: 'Tin tức', icon: '📰' },
     { path: '/admin/reports', label: 'Báo cáo', icon: '📈' },
     { path: '/admin/contact-messages', label: 'Tin nhắn liên hệ', icon: '✉️' },
   ]
@@ -95,7 +97,7 @@ const AdminLayout = () => {
             </button>
 
             <span className="ml-4 text-gray-600">
-              Xin chào, {user?.name || 'Admin'}
+              {/* Xin chào, {user?.name || 'Admin'} */}
             </span>
             <button
               onClick={() => {

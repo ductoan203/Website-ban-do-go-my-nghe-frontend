@@ -52,7 +52,13 @@ const SearchResults = () => {
       <h1 className="text-2xl font-bold mb-4">Kết quả tìm kiếm cho: "{searchTerm}"</h1>
 
       {loading && <p>Đang tìm kiếm...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      {error && (
+        error.includes('Type definition error') ? (
+          <p className="text-red-500">Không tìm thấy sản phẩm hoặc danh mục phù hợp với từ khóa này.</p>
+        ) : (
+          <p className="text-red-500">{error}</p>
+        )
+      )}
 
       {!loading && !error && searchTerm && (results ? (
         <div>
@@ -90,6 +96,10 @@ const SearchResults = () => {
                 </li>
               ))}
             </ul>
+          )}
+          {/* Nếu không có sản phẩm và không có danh mục */}
+          {results.products.length === 0 && results.categories.length === 0 && (
+            <p className="text-red-500 mt-4">Không tìm thấy sản phẩm hoặc danh mục phù hợp với từ khóa này.</p>
           )}
         </div>
       ) : (

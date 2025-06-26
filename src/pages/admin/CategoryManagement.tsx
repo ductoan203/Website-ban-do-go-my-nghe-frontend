@@ -109,38 +109,35 @@ const CategoryManagement = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Quản lý danh mục</h1>
-          <p className="mt-2 text-sm text-gray-700">Danh sách các danh mục sản phẩm</p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm danh mục..."
-            className="w-64 px-3 py-2 border rounded"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                    handleSearch();
-                }
-            }}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Tìm kiếm
-          </button>
-          <button
-            type="button"
-            onClick={() => handleOpenModal()}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
-          >
-            Thêm danh mục
-          </button>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý danh mục</h1>
+      </div>
+      <div className="flex justify-end items-center space-x-2 mb-2">
+        <input
+          type="text"
+          placeholder="Tìm kiếm danh mục..."
+          className="w-96 px-3 py-2 border rounded"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleSearch();
+            }
+          }}
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Tìm kiếm
+        </button>
+        <button
+          type="button"
+          onClick={() => handleOpenModal()}
+          className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
+        >
+          Thêm danh mục
+        </button>
       </div>
 
       <div className="mt-8 flex flex-col">
@@ -148,21 +145,21 @@ const CategoryManagement = () => {
           <div className="text-center py-8">Đang tải dữ liệu...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-300">
+            <table className="min-w-full divide-y divide-gray-300 bg-white rounded shadow table-fixed">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">ID</th>
                   <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tên danh mục</th>
                   <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Mô tả</th>
-                  <th className="relative py-3.5 pl-3 pr-4 sm:pr-6"><span className="sr-only">Actions</span></th>
+                  <th className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-sm font-semibold text-gray-900 text-right"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                  {Array.isArray(categories) && categories.map((category, index) => (
-                  <tr key={category.id}>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">{index + 1}</td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{category.name}</td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{category.description}</td>
+                  <tr key={category.id} className="text-sm">
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-left sm:pl-6">{index + 1}</td>
+                    <td className="whitespace-nowrap px-3 py-4 text-left text-gray-500">{category.name}</td>
+                    <td className="whitespace-nowrap px-3 py-4 text-left text-gray-500">{category.description}</td>
                     <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                       <button onClick={() => handleOpenModal(category)} className="text-blue-600 hover:text-blue-900 mr-4">Sửa</button>
                       <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-900">Xóa</button>

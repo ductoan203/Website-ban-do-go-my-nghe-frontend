@@ -42,6 +42,7 @@ interface Comment {
   };
   content: string;
   createdAt: string;
+  parentId?: number | null;
 }
 
 interface ApiResponse<T> {
@@ -83,8 +84,10 @@ const ProductDetail = () => {
         setIsWishlisted(wishlist.some((item: Product) => item.id === response.data.result.id));
         // Lấy sản phẩm liên quan
         if (response.data.result.category?.id) {
-          const relRes = await axios.get<{ result: Product[] }>(`http://localhost:8080/doan/products?categoryId=${response.data.result.category.id}`);
-          setRelated(relRes.data.result.filter(p => p.id !== response.data.result.id));
+          const relRes = await axios.get(`http://localhost:8080/doan/products?categoryId=${response.data.result.category.id}&top=8`);
+          const data = relRes.data as { result: { content: Product[] } };
+          const relatedProducts = Array.isArray(data.result.content) ? data.result.content : [];
+          setRelated(relatedProducts.filter((p: Product) => p.id !== response.data.result.id));
         }
       } catch (error) {
         console.error('Lỗi khi tải thông tin sản phẩm:', error);
@@ -100,36 +103,39 @@ const ProductDetail = () => {
   }, [id]);
 
   // Fetch comments
+  const fetchComments = async () => {
+    if (!id) return;
+    setCommentLoading(true);
+    try {
+      const response = await axios.get<ApiResponse<Comment[]>>(`http://localhost:8080/doan/products/${id}/comments`);
+      const mappedComments = Array.isArray(response.data.result)
+        ? response.data.result.map((c: any) => ({
+            ...c,
+            user: {
+              id: c.user.id !== undefined ? c.user.id : c.user.userId,
+              fullname: c.user.fullname
+            }
+          }))
+        : [];
+      setComments(mappedComments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setComments([]);
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchComments = async () => {
-      if (!id) return;
-      setCommentLoading(true);
-      try {
-        // Specify return type for axios.get - remove explicit AxiosResponse type on variable
-        const response = await axios.get<ApiResponse<Comment[]>>(`http://localhost:8080/doan/products/${id}/comments`);
-        setComments(response.data.result); // Now TypeScript knows response.data.result is Comment[]
-
-        // Simulate fetching comments - REMOVE THIS BLOCK
-        // console.log(`Fetching comments for product ${id}`);
-        // setTimeout(() => {
-        //   setComments([ // Sample comments
-        //     { id: 1, user: { id: 101, fullname: 'Nguyễn Văn A' }, content: 'Sản phẩm rất đẹp!', createdAt: new Date().toISOString() },
-        //     { id: 2, user: { id: 102, fullname: 'Trần Thị B' }, content: 'Chất liệu tốt, đóng gói cẩn thận.', createdAt: new Date().toISOString() },
-        //   ]);
-        //   setCommentLoading(false);
-        // }, 500);
-
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        setComments([]);
-      } finally {
-        setCommentLoading(false);
-      }
-    };
     fetchComments();
   }, [id]);
 
   const handleAddToCart = async () => {
+    if (!isLoggedIn) {
+      toast.warn('Vui lòng đăng nhập để mua hàng!');
+      // navigate('/login');
+      return;
+    }
     if (!product) return;
     try {
       await addItem({
@@ -187,48 +193,10 @@ const ProductDetail = () => {
     if (!product?.id) return;
     setCommentLoading(true);
     try {
-      // Specify return type for axios.post - remove explicit AxiosResponse type on variable
-      const response = await axios.post<ApiResponse<Comment>>(`http://localhost:8080/doan/products/${product.id}/comments`, { content: newComment });
-      console.log('Comment posted:', response.data);
-      
-      // Assuming backend returns the newly created comment in response.data.result
-      const postedComment = response.data.result; // Now TypeScript knows response.data.result is Comment
-      // Adjust the structure of `postedComment` to match the `Comment` interface if needed
-      // The backend Comment entity includes User object, ensure frontend interface matches.
-
-      // We need to map the backend Comment entity structure to the frontend Comment interface
-      // Assuming backend returns something like { id, content, createdAt, user: { id, fullname } }
-      const formattedComment: Comment = {
-          id: postedComment.id,
-          user: { // Map backend user object to frontend user object structure
-              id: postedComment.user.id,
-              fullname: postedComment.user.fullname,
-              // Map other user fields if they exist in backend response
-          },
-          content: postedComment.content,
-          createdAt: postedComment.createdAt,
-      };
-
-      setComments(prevComments => [formattedComment, ...prevComments]); // Add to the beginning
-
-      setNewComment(''); // Clear input
+      await axios.post<ApiResponse<Comment>>(`http://localhost:8080/doan/products/${product.id}/comments`, { content: newComment });
+      await fetchComments();
+      setNewComment('');
       toast.success('Bình luận của bạn đã được gửi!');
-
-      // Simulate posting comment - REMOVE THIS BLOCK
-      // console.log(`Posting comment for product ${product.id}: ${newComment}`);
-      // const newPostedComment = { // Sample new comment structure
-      //    id: comments.length + 1,
-      //    user: { id: authService.getCurrentUser()?.id || 0, fullname: authService.getCurrentUser()?.name || 'Bạn' }, // Use actual user info if available
-      //    content: newComment,
-      //    createdAt: new Date().toISOString(),
-      // };
-      // setTimeout(() => {
-      //    setComments([...comments, newPostedComment]); // Add new comment to list
-      //    setNewComment(''); // Clear input
-      //    toast.success('Bình luận của bạn đã được gửi!');
-      //    setCommentLoading(false);
-      // }, 500);
-
     } catch (error) {
       console.error('Error posting comment:', error);
       toast.error('Có lỗi xảy ra khi gửi bình luận.');
@@ -243,20 +211,11 @@ const ProductDetail = () => {
       if (newContent !== null && newContent.trim() !== '' && newContent !== comment.content) {
           setCommentLoading(true);
           try {
-              // Call backend API to update the comment
-              // Assuming the PUT endpoint is /products/{productId}/comments/{commentId}
-              const response = await axios.put<ApiResponse<Comment>>(
+              await axios.put<ApiResponse<Comment>>(
                 `http://localhost:8080/doan/products/${product?.id}/comments/${comment.id}`, 
                 { content: newContent }
               );
-              console.log('Comment updated:', response.data);
-              
-              // Update the comment in the state
-              setComments(prevComments => 
-                  prevComments.map(c => 
-                      c.id === comment.id ? response.data.result : c
-                  )
-              );
+              await fetchComments();
               toast.success('Bình luận đã được cập nhật.');
           } catch (error) {
               console.error('Error updating comment:', error);
@@ -381,37 +340,48 @@ const ProductDetail = () => {
           <div className="text-center text-gray-500">Chưa có bình luận nào.</div>
         ) : (
           <div className="space-y-6">
-            {comments.map(comment => {
-                const currentUser = authService.getCurrentUser(); // Get current user
-                // Add a check for comment.user before accessing its properties
-                const isCurrentUserComment = currentUser && comment.user && currentUser.id === comment.user.id; // Check if comment belongs to current user, safely accessing comment.user
-                
-                return (
-                  <div key={comment.id} className="border-b pb-4 last:border-b-0">
-                    <div className="flex items-center mb-2">
-                      {/* Safely access comment.user.fullname */}
-                      <div className="font-semibold text-gray-800 mr-2">{comment.user?.fullname || 'Người dùng'}</div>
-                      <div className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleString()}</div>
-                      {isCurrentUserComment && (
-                        <div className="ml-auto flex gap-2">
-                          <button 
-                            className="text-blue-600 hover:underline text-sm"
-                            onClick={() => handleEditComment(comment)}
-                          >
-                            Sửa
-                          </button>
-                          <button 
-                            className="text-red-600 hover:underline text-sm"
-                            onClick={() => handleDeleteComment(comment.id)}
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-gray-700">{comment.content}</div>
+            {comments.filter(c => !c.parentId).map(comment => {
+              const currentUser = authService.getCurrentUser();
+              const isCurrentUserComment = currentUser && comment.user && String(currentUser.id) === String(comment.user.id);
+              // Lấy các reply cho bình luận này
+              const replies = comments.filter(r => r.parentId === comment.id);
+              return (
+                <div key={comment.id} className="border-b pb-4 last:border-b-0">
+                  <div className="flex items-center mb-2">
+                    <div className="font-semibold text-gray-800 mr-2">{comment.user?.fullname || 'Người dùng'}</div>
+                    <div className="text-sm text-gray-500">{new Date(comment.createdAt).toLocaleString()}</div>
+                    {isCurrentUserComment && (
+                      <div className="ml-auto flex gap-2">
+                        <button 
+                          className="text-blue-600 hover:underline text-sm"
+                          onClick={() => handleEditComment(comment)}
+                        >
+                          Sửa
+                        </button>
+                        <button 
+                          className="text-red-600 hover:underline text-sm"
+                          onClick={() => handleDeleteComment(comment.id)}
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    )}
                   </div>
-                );
+                  <div className="text-gray-700">{comment.content}</div>
+                  {/* Hiển thị các reply của admin */}
+                  {replies.length > 0 && (
+                    <div className="mt-2 space-y-2 pl-6 border-l-2 border-blue-200">
+                      {replies.map(reply => (
+                        <div key={reply.id} className="flex items-center text-blue-700">
+                          <span className="font-semibold mr-2">Admin</span>
+                          <span className="text-gray-700">{reply.content}</span>
+                          <span className="ml-2 text-xs text-gray-400">{new Date(reply.createdAt).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
             })}
           </div>
         )}

@@ -38,6 +38,19 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+// Interceptor tự động gửi token cho mọi request
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 class AuthService {
   async login(email: string, password: string) {
     try {

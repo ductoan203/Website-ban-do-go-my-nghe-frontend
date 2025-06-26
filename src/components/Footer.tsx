@@ -7,9 +7,9 @@ const Footer = () => (
       </div>
       <div>
         <h3 className="font-bold text-lg mb-2">Liên hệ</h3>
-        <p>Địa chỉ: 123 Đường Gỗ, Quận 1, TP.HCM</p>
+        <p>Địa chỉ: La Xuyên, Yên Ninh, Ý Yên, Nam Định</p>
         <p>Hotline: 0123 456 789</p>
-        <p>Email: hungdungwood@gmail.com</p>
+        <p>Email: dogohungdung@gmail.com</p>
       </div>
       <div>
         <h3 className="font-bold text-lg mb-2">Kết nối</h3>

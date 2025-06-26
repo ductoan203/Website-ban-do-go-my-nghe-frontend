@@ -47,6 +47,7 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
   const [suggestions, setSuggestions] = useState<SearchSuggestionResults | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Kiểm tra trạng thái đăng nhập
@@ -71,8 +72,11 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
-          searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+        searchInputRef.current && !searchInputRef.current.contains(event.target as Node) &&
+        suggestionDropdownRef.current && !suggestionDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false)
         setShowSuggestions(false);
       }
@@ -135,74 +139,75 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
           </Link>
 
           {/* Thanh tìm kiếm - Ẩn trên mobile */}
-          <form className="hidden md:flex flex-1 mx-8 max-w-xl relative" onSubmit={handleSearch}>
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              className="w-full border border-gray-300 rounded-l-full px-6 py-2 focus:outline-none focus:border-[#8B4513]"
-              value={searchTerm}
-              onChange={handleInputChange}
-              ref={searchInputRef}
-              onFocus={() => searchTerm.trim().length >= 2 && suggestions && setShowSuggestions(true)}
-            />
-            <button
-              type="submit"
-              className="bg-[#8B4513] text-white px-6 py-2 rounded-r-full hover:bg-[#6B3410] transition flex items-center gap-2"
-            >
-              <FaSearch />
-              <span className="hidden sm:inline">Tìm kiếm</span>
-            </button>
-          </form>
-
-          {/* Search Suggestions Dropdown */}
-          {showSuggestions && suggestions && (searchTerm.trim().length >= 2) && (
-             <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-md shadow-lg z-10 max-h-60 overflow-y-auto">
-               {
-                 suggestions.products.length > 0 || suggestions.categories.length > 0 ? (
-                   <>
-                     {/* Product Suggestions */}
-                     {suggestions.products.length > 0 && (
-                       <div className="py-2">
+          <div className="hidden md:flex flex-1 mx-8 max-w-xl relative">
+            <form className="w-full flex" onSubmit={e => { e.preventDefault(); handleSearch(e); }}>
+              <input
+                type="text"
+                placeholder="Tìm kiếm sản phẩm..."
+                className="w-full border border-gray-300 rounded-l-full px-6 py-2 focus:outline-none focus:border-[#8B4513]"
+                value={searchTerm}
+                onChange={handleInputChange}
+                ref={searchInputRef}
+                onFocus={() => searchTerm.trim().length >= 2 && suggestions && setShowSuggestions(true)}
+              />
+              <button
+                type="submit"
+                className="bg-[#8B4513] text-white px-6 py-2 rounded-r-full hover:bg-[#6B3410] transition flex items-center gap-2"
+                style={{ marginLeft: '-1px' }}
+              >
+                <FaSearch />
+                <span className="hidden sm:inline">Tìm kiếm</span>
+              </button>
+            </form>
+            {/* Search Suggestions Dropdown */}
+            {showSuggestions && suggestions && searchTerm && searchTerm.trim().length >= 2 && (
+              <div ref={suggestionDropdownRef} className="absolute left-0 right-0 top-full bg-white border border-gray-300 rounded-b-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {
+                  suggestions.products.length > 0 || suggestions.categories.length > 0 ? (
+                    <>
+                      {/* Product Suggestions */}
+                      {suggestions.products.length > 0 && (
+                        <div className="py-2">
                           <div className="px-4 py-1 text-sm font-semibold text-gray-600 border-b">Sản phẩm</div>
                           {suggestions.products.map(product => (
-                             <Link
-                               key={`product-${product.id}`}
-                               to={`/products/${product.id}`}
-                               className="flex items-center px-4 py-2 hover:bg-gray-100"
-                               onClick={handleSuggestionClick}
-                             >
-                               {product.thumbnailUrl && (
-                                  <img src={product.thumbnailUrl} alt={product.name} className="w-10 h-10 object-cover mr-3 rounded" />
-                               )}
-                               <span>{product.name}</span>
-                             </Link>
+                            <Link
+                              key={`product-${product.id}`}
+                              to={`/products/${product.id}`}
+                              className="flex items-center px-4 py-2 hover:bg-gray-100"
+                              onClick={() => setShowSuggestions(false)}
+                            >
+                              {product.thumbnailUrl && (
+                                <img src={product.thumbnailUrl} alt={product.name} className="w-10 h-10 object-cover mr-3 rounded" />
+                              )}
+                              <span>{product.name}</span>
+                            </Link>
                           ))}
-                       </div>
-                     )}
-
-                     {/* Category Suggestions */}
-                     {suggestions.categories.length > 0 && (
-                        <div className="py-2">
-                           <div className="px-4 py-1 text-sm font-semibold text-gray-600 border-b">Danh mục</div>
-                           {suggestions.categories.map(category => (
-                               <Link
-                                  key={`category-${category.id}`}
-                                  to={`/products?category=${category.id}`}
-                                  className="block px-4 py-2 hover:bg-gray-100"
-                                  onClick={handleSuggestionClick}
-                               >
-                                  {category.name}
-                               </Link>
-                           ))}
                         </div>
-                     )}
-                   </>
-                 ) : (
+                      )}
+                      {/* Category Suggestions */}
+                      {suggestions.categories.length > 0 && (
+                        <div className="py-2">
+                          <div className="px-4 py-1 text-sm font-semibold text-gray-600 border-b">Danh mục</div>
+                          {suggestions.categories.map(category => (
+                            <Link
+                              key={`category-${category.id}`}
+                              to={`/products?category=${category.id}`}
+                              className="block px-4 py-2 hover:bg-gray-100"
+                              onClick={() => setShowSuggestions(false)}
+                            >
+                              {category.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
                     <div className="px-4 py-2 text-gray-500">Không tìm thấy kết quả nào.</div>
-                 )
-               }
+                  )
+                }
               </div>
-          )}
+            )}
+          </div>
 
           {/* Menu icons */}
           <div className="flex items-center gap-4">
@@ -278,6 +283,7 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
           <ul className="flex justify-center space-x-20 text-lg font-semibold">
             <li><Link to="/" className="text-white hover:text-amber-200 transition">Trang chủ</Link></li>
             <li><Link to="/products" className="text-white hover:text-amber-200 transition">Sản phẩm</Link></li>
+            {/* <li><Link to="/news" className="text-white hover:text-amber-200 transition">Tin tức</Link></li> */}
             <li><Link to="/about" className="text-white hover:text-amber-200 transition">Giới thiệu</Link></li>
             <li><Link to="/contact" className="text-white hover:text-amber-200 transition">Liên hệ</Link></li>
           </ul>
@@ -296,6 +302,7 @@ const Header = ({ searchTerm, setSearchTerm, handleSearch }: HeaderProps) => {
           <ul className="text-2xl font-bold text-[#8B4513] space-y-10">
             <li><Link to="/" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Trang chủ</Link></li>
             <li><Link to="/products" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Sản phẩm</Link></li>
+            <li><Link to="/news" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Tin tức</Link></li>
             <li><Link to="/about" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Giới thiệu</Link></li>
             <li><Link to="/contact" className="hover:text-amber-200 transition" onClick={() => setIsMenuOpen(false)}>Liên hệ</Link></li>
             {isLoggedIn && currentUser ? (

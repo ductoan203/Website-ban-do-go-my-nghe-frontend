@@ -11,8 +11,8 @@ interface ContactMessage {
   email: string;
   message: string;
   createdAt: string;
-  isRead: boolean;
-  isReplied: boolean;
+  read: boolean;
+  replied: boolean;
 }
 
 const ContactMessages = () => {
@@ -30,11 +30,16 @@ const ContactMessages = () => {
   const fetchMessages = async () => {
     try {
       const response = await axios.get<ContactMessage[]>(`${API_URL}/contact`);
-      console.log('API Response for /contact:', response.data);
-      setMessages(response.data);
+      // Map lại trường read -> isRead, replied -> isReplied
+      const mapped = response.data.map(msg => ({
+        ...msg,
+        isRead: Boolean(msg.read),
+        isReplied: Boolean(msg.replied),
+      }));
+      setMessages(mapped);
       // Sau khi fetch lại tin nhắn, cập nhật selectedMessage nếu nó vẫn tồn tại trong danh sách mới
       if (selectedMessage) {
-        const updatedSelected = response.data.find(msg => msg.id === selectedMessage.id);
+        const updatedSelected = mapped.find(msg => msg.id === selectedMessage.id);
         if (updatedSelected) {
           setSelectedMessage(updatedSelected);
         } else {
@@ -124,6 +129,22 @@ const ContactMessages = () => {
     }
   };
 
+  const handleSelectMessage = async (message: ContactMessage) => {
+    setSelectedMessage(message);
+    if (!message.read) {
+      try {
+        await axios.put(`${API_URL}/contact/${message.id}/read`);
+        const updatedMessages = messages.map(msg =>
+          msg.id === message.id ? { ...msg, read: true } : msg
+        );
+        setMessages(updatedMessages);
+        setSelectedMessage({ ...message, read: true });
+      } catch (error) {
+        toast.error('Không thể đánh dấu tin nhắn đã đọc');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -134,11 +155,8 @@ const ContactMessages = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Quản lý tin nhắn liên hệ</h1>
-        <div className="text-sm text-gray-600">
-          Tổng số tin nhắn: {messages.length}
-        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -158,8 +176,8 @@ const ContactMessages = () => {
                   key={message.id}
                   className={`p-4 cursor-pointer hover:bg-gray-50 ${
                     selectedMessage?.id === message.id ? 'bg-amber-50' : ''
-                  } ${message.isRead ? '' : 'bg-blue-50'}`}
-                  onClick={() => setSelectedMessage(message)}
+                  } ${message.read ? '' : 'bg-blue-50'}`}
+                  onClick={() => handleSelectMessage(message)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -173,18 +191,16 @@ const ContactMessages = () => {
                   <p className="mt-2 text-sm text-gray-600 line-clamp-2">{message.message}</p>
                   <span
                     className={`inline-block mt-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                      message.isRead
+                      message.read
                         ? 'text-green-600 bg-green-100'
                         : 'text-blue-600 bg-blue-100'
                     }`}
                   >
-                    {message.isRead ? 'Đã đọc' : 'Chưa đọc'}
+                    {message.read ? 'Đã đọc' : 'Chưa đọc'}
                   </span>
-                  {message.isReplied && (
-                    <span className="inline-block mt-2 ml-2 px-2 py-1 text-xs font-semibold text-purple-600 bg-purple-100 rounded-full">
-                      Đã phản hồi
-                    </span>
-                  )}
+                  <span className={`inline-block mt-2 ml-2 px-2 py-1 text-xs font-semibold rounded-full ${message.replied ? 'text-purple-600 bg-purple-100' : 'text-gray-500 bg-gray-100'}`}>
+                    {message.replied ? 'Đã phản hồi' : 'Chưa phản hồi'}
+                  </span>
                 </div>
               ))
             )}
@@ -204,20 +220,10 @@ const ContactMessages = () => {
                   <span className="text-sm text-gray-500">
                     {format(new Date(selectedMessage.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })}
                   </span>
-                  <span
-                    className={`ml-2 inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-                      selectedMessage.isRead
-                        ? 'text-green-600 bg-green-100'
-                        : 'text-blue-600 bg-blue-100'
-                    }`}
-                  >
-                    {selectedMessage.isRead ? 'Đã đọc' : 'Chưa đọc'}
-                  </span>
-                  {selectedMessage.isReplied && (
-                    <span className="ml-2 inline-block px-2 py-1 text-xs font-semibold text-purple-600 bg-purple-100 rounded-full">
-                      Đã phản hồi
-                    </span>
-                  )}
+                  <div className="flex gap-4 mt-2">
+                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${selectedMessage.read ? 'text-green-600 bg-green-100' : 'text-blue-600 bg-blue-100'}`}>{selectedMessage.read ? 'Đã đọc' : 'Chưa đọc'}</span>
+                    <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${selectedMessage.replied ? 'text-purple-600 bg-purple-100' : 'text-gray-500 bg-gray-100'}`}>{selectedMessage.replied ? 'Đã phản hồi' : 'Chưa phản hồi'}</span>
+                  </div>
                 </div>
               </div>
               
@@ -232,7 +238,7 @@ const ContactMessages = () => {
                 >
                   Trả lời
                 </button>
-                {!selectedMessage.isRead && (
+                {!selectedMessage.read && (
                   <button
                     onClick={() => handleMarkAsRead(selectedMessage.id)}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
@@ -240,7 +246,7 @@ const ContactMessages = () => {
                     Đánh dấu đã đọc
                   </button>
                 )}
-                {selectedMessage.isReplied && (
+                {selectedMessage.replied && (
                     <span className="px-4 py-2 bg-purple-100 text-purple-700 rounded-md">
                       Đã phản hồi
                     </span>

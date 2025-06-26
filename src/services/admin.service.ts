@@ -29,8 +29,11 @@ export const deleteCustomer = (id: number) => axios.delete(`${API_URL}/user/${id
 // Function to create a new customer
 export const createCustomer = (data: any) => axios.post(`${API_URL}/user/customers`, data);
 
-export const getAllAdminOrders = (status?: string) =>
-  axios.get(`${API_URL}/orders`, { params: { status } });
+export const getAllAdminOrders = (status?: string, page = 0, size = 15) => {
+  return axios.get(`${API_URL}/orders`, {
+    params: { status, page, size }
+  });
+};
 
 export const updateOrderStatus = (id: number, status: string) =>
   axios.put(`${API_URL}/orders/${id}/status`, null, {

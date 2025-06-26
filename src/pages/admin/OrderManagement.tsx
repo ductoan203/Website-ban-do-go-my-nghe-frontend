@@ -57,26 +57,73 @@ const getAllowedStatusTransitions = (currentStatus: string) => {
   }
 };
 
+// Hàm chuyển đổi phương thức thanh toán sang tiếng Việt
+const getPaymentMethodLabel = (method: string) => {
+  if (!method) return '';
+  switch (method.toLowerCase()) {
+    case 'cod':
+    case 'COD':
+      return 'Thanh toán khi nhận hàng (COD)';
+    case 'momo':
+      return 'Thanh toán online qua Momo';
+    case 'vnpay':
+      return 'Thanh toán online qua VNPAY';
+    default:
+      return 'Thanh toán online';
+  }
+};
+
+// Hàm chuyển đổi trạng thái đơn hàng sang tiếng Việt
+const getOrderStatusLabel = (status: string) => {
+  switch (status) {
+    case 'PENDING': return 'Chờ xác nhận';
+    case 'CONFIRMED': return 'Đã xác nhận';
+    case 'READY_FOR_DELIVERY': return 'Chờ lấy hàng';
+    case 'SHIPPED': return 'Đang giao hàng';
+    case 'DELIVERED': return 'Đã giao hàng';
+    case 'CANCELLED': return 'Đã hủy';
+    case 'RETURNED': return 'Đã trả hàng';
+    default: return status;
+  }
+};
+
+// Hàm chuyển đổi trạng thái thanh toán sang tiếng Việt
+const getPaymentStatusLabel = (status: string) => {
+  switch (status) {
+    case 'PAID': return 'Đã thanh toán';
+    case 'UNPAID': return 'Chưa thanh toán';
+    case 'PENDING': return 'Chờ thanh toán';
+    case 'CANCELLED': return 'Đã hủy thanh toán';
+    default: return status;
+  }
+};
+
 const OrderManagement = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageSize = 15;
 
   const fetchOrders = async (status?: string) => {
     try {
-    const res = await adminService.getAllAdminOrders(status) as any;
-    setOrders(res.data.result);
+      const res = await adminService.getAllAdminOrders(status, page, pageSize) as any;
+      const data = res.data.result?.content || res.data.result || [];
+      setOrders(Array.isArray(data) ? data : []);
+      setTotalPages(res.data.result?.totalPages || 1);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đơn hàng:", error);
-      toast.error("Không thể lấy danh sách đơn hàng.");
+      setOrders([]);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(filterStatus);
+    // eslint-disable-next-line
+  }, [filterStatus, page]);
 
   const handleStatusChange = async (orderId: number, newStatus: string) => {
     // Tìm đơn hàng hiện tại
@@ -154,18 +201,20 @@ const OrderManagement = () => {
   });
 
   return (
-    <div className="p-6">
+    <div className="px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn hàng</h1>
+      </div>
+
       <div className="sm:flex sm:items-center mb-4">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Quản lý đơn hàng</h1>
-        </div>
+        <div className="sm:flex-auto"></div>
         <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
           <input
             type="text"
             placeholder="Tìm kiếm theo mã đơn, tên, email hoặc số điện thoại..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-3 py-2 border rounded"
+            className="w-96 px-3 py-2 border rounded"
           />
           <button
             onClick={() => fetchOrders(filterStatus)}
@@ -191,84 +240,100 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      <table className="w-full bg-white rounded shadow">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="p-3">Mã đơn</th>
-            <th className="p-3">Khách hàng</th>
-            <th className="p-3">Email</th>
-            <th className="p-3">Số điện thoại</th>
-            <th className="p-3">Địa chỉ</th>
-            <th className="p-3">Ngày đặt</th>
-            <th className="p-3">Tổng tiền</th>
-            <th className="p-3">Thanh toán</th>
-            <th className="p-3">Trạng thái</th>
-            <th className="p-3">Cập nhật</th>
-            <th className="p-3">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredOrders.map((o) => {
-            console.log(`[DEBUG] Đơn hàng ID ${o.id}: Trạng thái hiện tại: ${o.status}`);
-            const allowedStatusValues = getAllowedStatusTransitions(o.status);
-            console.log(`[DEBUG] Đơn hàng ID ${o.id}: Các trạng thái được phép chuyển đổi:`, allowedStatusValues);
-            const currentStatusLabel = statusOptions.find(s => s.value === o.status)?.label || o.status;
-            
-            return (
-              <tr key={o.id} className="border-t text-sm">
-                <td className="p-3">{o.id}</td>
-                <td className="p-3">{o.customerName}</td>
-                <td className="p-3">{o.email}</td>
-                <td className="p-3">{o.phone}</td>
-                <td className="p-3">{o.shippingAddress}</td>
-                <td className="p-3">{new Date(o.createdAt).toLocaleString()}</td>
-                <td className="p-3">{o.total.toLocaleString("vi-VN")}đ</td>
-                <td className="p-3">
-                  {o.paymentMethod === "COD" ? "COD" : "Online"} - {o.paymentStatus}
-                </td>
-                <td className="p-3 font-medium">
-                  {currentStatusLabel}
-                  {o.status === 'CANCELLED' && o.cancelledBy && ` bởi ${o.cancelledBy}`}
-                </td>
-                <td className="p-3">
-                  <select
-                    value={o.status}
-                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                    className="border rounded p-1"
-                  >
-                    <option value={o.status}>{currentStatusLabel}</option> {/* Hiển thị trạng thái hiện tại là lựa chọn đầu tiên */}
-                    {allowedStatusValues.map((allowedStatusValue) => {
-                      const option = statusOptions.find(s => s.value === allowedStatusValue);
-                      console.log(`[DEBUG] Đơn hàng ID ${o.id}: Thêm tùy chọn: ${option?.label} (${option?.value})`);
-                      return option ? (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ) : null;
-                    })}
-                  </select>
-                </td>
-                <td className="p-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleViewOrderDetails(o)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-300 bg-white rounded shadow table-fixed">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Mã đơn</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Khách hàng</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Email</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Số điện thoại</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Ngày đặt</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Tổng tiền</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Phương thức thanh toán</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Trạng thái thanh toán</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Trạng thái</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Cập nhật</th>
+              <th className="p-3 text-left text-sm font-semibold text-gray-900">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {filteredOrders.map((o) => {
+              console.log(`[DEBUG] Đơn hàng ID ${o.id}: Trạng thái hiện tại: ${o.status}`);
+              const allowedStatusValues = getAllowedStatusTransitions(o.status);
+              console.log(`[DEBUG] Đơn hàng ID ${o.id}: Các trạng thái được phép chuyển đổi:`, allowedStatusValues);
+              const currentStatusLabel = statusOptions.find(s => s.value === o.status)?.label || o.status;
+              
+              return (
+                <tr key={o.id} className="border-t text-sm">
+                  <td className="p-3">{o.id}</td>
+                  <td className="p-3">{o.customerName}</td>
+                  <td className="p-3">{o.email}</td>
+                  <td className="p-3">{o.phone}</td>
+                  <td className="p-3">{new Date(o.createdAt).toLocaleString()}</td>
+                  <td className="p-3">{o.total.toLocaleString("vi-VN")}đ</td>
+                  <td className="p-3">{getPaymentMethodLabel(o.paymentMethod)}</td>
+                  <td className="p-3">{getPaymentStatusLabel(o.paymentStatus)}</td>
+                  <td className="p-3 font-medium">{getOrderStatusLabel(o.status)}{o.status === 'CANCELLED' && o.cancelledBy && ` bởi ${o.cancelledBy}`}</td>
+                  <td className="p-3">
+                    <select
+                      value={o.status}
+                      onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                      className="border rounded p-1"
                     >
-                      Chi tiết
-                    </button>
-                    <button
-                      onClick={() => handleDeleteOrder(o)}
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      <option value={o.status}>{getOrderStatusLabel(o.status)}</option>
+                      {allowedStatusValues.map((allowedStatusValue) => {
+                        const option = statusOptions.find(s => s.value === allowedStatusValue);
+                        console.log(`[DEBUG] Đơn hàng ID ${o.id}: Thêm tùy chọn: ${option?.label} (${option?.value})`);
+                        return option ? (
+                          <option key={option.value} value={option.value}>
+                            {getOrderStatusLabel(option.value)}
+                          </option>
+                        ) : null;
+                      })}
+                    </select>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewOrderDetails(o)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Chi tiết
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(o)}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination UI */}
+      <div className="flex justify-center mt-4">
+        <button
+          disabled={page === 0}
+          onClick={() => setPage(page - 1)}
+          className="px-3 py-1 border rounded mx-1"
+        >
+          Trang trước
+        </button>
+        <span className="px-3 py-1">{page + 1} / {totalPages}</span>
+        <button
+          disabled={page + 1 >= totalPages}
+          onClick={() => setPage(page + 1)}
+          className="px-3 py-1 border rounded mx-1"
+        >
+          Trang sau
+        </button>
+      </div>
 
       {/* Modal chi tiết đơn hàng */}
       {isModalOpen && selectedOrder && (
@@ -295,9 +360,9 @@ const OrderManagement = () => {
             <div className="mb-4">
               <h3 className="font-semibold mb-2">Thông tin đơn hàng</h3>
               <p>Ngày đặt: {new Date(selectedOrder.createdAt).toLocaleString()}</p>
-              <p>Phương thức thanh toán: {selectedOrder.paymentMethod === "COD" ? "COD" : "Online"}</p>
-              <p>Trạng thái thanh toán: {selectedOrder.paymentStatus}</p>
-              <p>Trạng thái đơn hàng: {statusOptions.find(s => s.value === selectedOrder.status)?.label}</p>
+              <p>Phương thức thanh toán: {getPaymentMethodLabel(selectedOrder.paymentMethod)}</p>
+              <p>Trạng thái thanh toán: {getPaymentStatusLabel(selectedOrder.paymentStatus)}</p>
+              <p>Trạng thái đơn hàng: {getOrderStatusLabel(selectedOrder.status)}</p>
             </div>
 
             <div>

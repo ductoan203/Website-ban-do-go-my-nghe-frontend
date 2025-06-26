@@ -34,6 +34,11 @@ import PasswordResetForm from './pages/PasswordResetForm'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import ContactMessages from './pages/admin/ContactMessages'
+import NewsList from './pages/NewsList'
+import NewsDetail from './pages/NewsDetail'
+import NewsAdmin from './pages/admin/NewsAdmin'
+import NewsForm from './pages/admin/NewsForm'
+import PayOSPayment from './pages/PayOSPayment'
 
 
 // Protected Route component cho admin
@@ -102,8 +107,11 @@ function App() {
             <Route path="user/orders" element={<PrivateRoute><UserOrders /></PrivateRoute>} />
             <Route path="checkout" element={<Checkout />} />
             <Route path="payment/momo/return" element={<MomoReturn />} />
+            <Route path="payment/payos" element={<PayOSPayment />} />
             <Route path="order-confirmation" element={<OrderConfirmation />} />
             <Route path="search-results" element={<SearchResults />} />
+            <Route path="news" element={<NewsList />} />
+            <Route path="news/:slug" element={<NewsDetail />} />
           </Route>
 
           {/* Admin routes */}
@@ -123,6 +131,9 @@ function App() {
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="comments" element={<AdminCommentManagement />} />
             <Route path="contact-messages" element={<ContactMessages />} />
+            <Route path="news" element={<NewsAdmin />} />
+            <Route path="news/create" element={<NewsForm />} />
+            <Route path="news/edit/:id" element={<NewsForm />} />
           </Route>
 
           {/* Catch all route */}

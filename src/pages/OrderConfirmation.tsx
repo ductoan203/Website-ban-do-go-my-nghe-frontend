@@ -43,7 +43,7 @@ const OrderConfirmation = () => {
   const { clearCart } = useCart();
 
   const orderIdFromParams = params.get('orderId');
-  const statusFromParams = params.get('status') as 'success' | 'failed' | 'pending' | 'unknown' | null;
+  const statusFromParams = params.get('status');
 
   const initialOrderData = location.state?.orderData as FetchedOrder | undefined;
 
@@ -90,14 +90,19 @@ const OrderConfirmation = () => {
     }
   }, [finalOrderId, initialOrderData]);
 
-  const displayStatus = statusFromParams ? statusFromParams :
-    initialOrderData ? 'success' :
-      order ?
-        (order.paymentMethod === 'cod' && order.status === 'CONFIRMED') ||
-          (order.paymentMethod !== 'cod' && order.paymentStatus === 'PAID')
-          ? 'success'
-          : 'pending'
-        : 'unknown';
+  const displayStatus =
+    statusFromParams === 'success' || statusFromParams === 'PAID'
+      ? 'success'
+      : statusFromParams === 'failed'
+      ? 'failed'
+      : initialOrderData
+      ? 'success'
+      : order
+      ? (order.paymentMethod === 'cod' && order.status === 'CONFIRMED') ||
+        (order.paymentMethod !== 'cod' && order.paymentStatus === 'PAID')
+        ? 'success'
+        : 'pending'
+      : 'unknown';
 
   if (loading) {
     return <div className="text-center mt-20">Đang tải thông tin đơn hàng...</div>;

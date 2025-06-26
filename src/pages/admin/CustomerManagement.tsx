@@ -137,83 +137,82 @@ const CustomerManagement = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="sm:flex sm:items-center mb-4">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Quản lý khách hàng</h1>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm khách hàng..."
-            className="px-3 py-2 border rounded w-64"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Tìm kiếm
-          </button>
-          <button
-            onClick={handleAddCustomerClick}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-          >
-            Thêm khách hàng
-          </button>
-        </div>
+    <div className="px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý khách hàng</h1>
       </div>
-
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="px-4 py-2">Tên khách hàng</th>
-            <th className="px-4 py-2">Email</th>
-            <th className="px-4 py-2">Số điện thoại</th>
-            <th className="px-4 py-2">Địa chỉ</th>
-            <th className="px-4 py-2 text-center">Xác thực</th>
-            <th className="px-4 py-2 text-center">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {customers.map((customer) => (
-            <tr key={customer.userId} className="text-center border-t">
-              <td className="px-4 py-2">{customer.fullname}</td>
-              <td className="px-4 py-2">{customer.email}</td>
-              <td className="px-4 py-2">{customer.phoneNumber}</td>
-              <td className="px-4 py-2">{customer.address}</td>
-              <td className="px-4 py-2">
-                <span
-                  className={`inline-block w-28 text-center px-2 py-1 text-sm font-medium rounded-full ${
-                    customer.isVerified
-                      ? "bg-green-100 text-green-700 border border-green-500"
-                      : "bg-yellow-100 text-yellow-700 border border-yellow-500"
-                  }`}
-                >
-                  {customer.isVerified ? "Đã xác thực" : "Chưa xác thực"}
-                </span>
-              </td>   
-              <td className="px-4 py-2">
-                <div className="flex justify-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(customer)}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(customer)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                  >
-                    Xóa
-                  </button>
-                </div>
-              </td>
+      <div className="flex justify-end items-center space-x-2 mb-2">
+        <input
+          type="text"
+          placeholder="Tìm kiếm khách hàng..."
+          className="w-96 px-3 py-2 border rounded"
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Tìm kiếm
+        </button>
+        <button
+          onClick={handleAddCustomerClick}
+          className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
+        >
+          Thêm khách hàng
+        </button>
+      </div>
+      <div className="mt-8 overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-300 bg-white rounded shadow table-fixed">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Tên khách hàng</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Số điện thoại</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Địa chỉ</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Xác thực</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {customers.map((customer) => (
+              <tr key={customer.userId} className="text-sm">
+                <td className="px-4 py-2 text-left">{customer.fullname}</td>
+                <td className="px-4 py-2 text-left">{customer.email}</td>
+                <td className="px-4 py-2 text-left">{customer.phoneNumber}</td>
+                <td className="px-4 py-2 text-left">{customer.address}</td>
+                <td className="px-4 py-2 text-center">
+                  <span
+                    className={`inline-block w-28 text-center px-2 py-1 text-sm font-medium rounded-full ${
+                      customer.isVerified
+                        ? "bg-green-100 text-green-700 border border-green-500"
+                        : "bg-yellow-100 text-yellow-700 border border-yellow-500"
+                    }`}
+                  >
+                    {customer.isVerified ? "Đã xác thực" : "Chưa xác thực"}
+                  </span>
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <div className="flex justify-center space-x-2">
+                    <button
+                      onClick={() => handleEdit(customer)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDelete(customer)}
+                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Modal chỉnh sửa khách hàng */}
       {isEditModalOpen && editingCustomer && (

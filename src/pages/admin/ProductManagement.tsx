@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import * as productService from '../../services/admin.service'
 import UploadImage from '../../components/admin/UploadImage'
 import * as categoryService from '../../services/admin.service'
+import { Link } from 'react-router-dom'
 
 interface ProductImage {
   id: number
@@ -193,91 +194,80 @@ const ProductManagement = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Quản lý sản phẩm
-          </h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Danh sách tất cả sản phẩm đồ gỗ mỹ nghệ Hùng Dũng
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none flex items-center space-x-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm sản phẩm theo tên, chất liệu, kích thước, danh mục..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64 px-3 py-2 border rounded"
-          />
-          <button
-            onClick={() => fetchProducts()}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Tìm kiếm
-          </button>
-          <button
-            type="button"
-            onClick={() => handleOpenModal()}
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
-          >
-            Thêm sản phẩm
-          </button>
-        </div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h1>
+      </div>
+      <div className="flex justify-end items-center space-x-2 mb-2">
+        <input
+          type="text"
+          placeholder="Tìm kiếm sản phẩm theo tên, chất liệu..."
+          className="w-96 px-3 py-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button
+          onClick={() => fetchProducts()}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Tìm kiếm
+        </button>
+        <button
+          type="button"
+          onClick={() => handleOpenModal()}
+          className="inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
+        >
+          Thêm sản phẩm
+        </button>
       </div>
 
       <div className="mt-8 flex flex-col">
         {loading ? (
           <div className="text-center py-8">Đang tải dữ liệu...</div>
         ) : (
-          <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300 table-fixed">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="w-[200px] py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Ảnh đại diện</th>
-                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tên</th>
-                      <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá</th>
-                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Chất liệu</th>
-                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kích thước</th>
-                      <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tồn kho</th>
-                      <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Danh mục</th>
-                      <th className="w-28 relative py-3.5 pl-3 pr-4 sm:pr-6 text-sm font-semibold text-gray-900">Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {filteredProducts.map((product) => (
-                      <tr key={product.id}>
-                        <td className="whitespace-normal py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                          <img src={`http://localhost:8080/doan${product.thumbnailUrl}`} alt={product.name} className="w-full max-h-32 object-contain rounded-md mx-auto" />
-                        </td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.name}</td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.material}</td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.dimensions}</td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.quantityInStock}</td>
-                        <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.category?.name}</td>
-                        <td className="relative whitespace-normal py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleOpenModal(product)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Xóa
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-300 bg-white rounded shadow table-fixed">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="w-[200px] py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Ảnh đại diện</th>
+                  <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tên</th>
+                  <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Giá</th>
+                  <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Chất liệu</th>
+                  <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Kích thước</th>
+                  <th className="w-20 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tồn kho</th>
+                  <th className="w-1/6 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Danh mục</th>
+                  <th className="w-28 relative py-3.5 pl-3 pr-4 sm:pr-6 text-sm font-semibold text-gray-900 text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {filteredProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td className="whitespace-normal py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                      <img src={`http://localhost:8080/doan${product.thumbnailUrl}`} alt={product.name} className="w-full max-h-32 object-contain rounded-md mx-auto" />
+                    </td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.name}</td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.material}</td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.dimensions}</td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.quantityInStock}</td>
+                    <td className="whitespace-normal px-3 py-4 text-sm text-gray-500">{product.category?.name}</td>
+                    <td className="relative whitespace-normal py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleOpenModal(product)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
