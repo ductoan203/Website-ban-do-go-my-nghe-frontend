@@ -348,7 +348,7 @@ const Checkout = () => {
             onChange={handleChange}
           >
             <option value="cod">Thanh toán khi nhận hàng (COD)</option>
-            <option value="momo">Thanh toán qua Momo</option>
+            {/* <option value="momo">Thanh toán qua Momo</option> */}
             <option value="vnpay">Thanh toán qua VNPAY</option>
             <option value="payos">Thanh toán qua PayOS</option>
           </select>
