@@ -42,7 +42,8 @@ const OrderConfirmation = () => {
   const params = new URLSearchParams(location.search);
   const { clearCart } = useCart();
 
-  const orderIdFromParams = params.get('orderId');
+  // Ưu tiên lấy orderId từ 'orderId', nếu không có thì lấy từ 'vnp_TxnRef' (VNPAY)
+  const orderIdFromParams = params.get('orderId') || params.get('vnp_TxnRef');
   const statusFromParams = params.get('status');
 
   const initialOrderData = location.state?.orderData as FetchedOrder | undefined;
